@@ -38,7 +38,9 @@ Renderer::~Renderer() {
   SDL_Quit();
 }
 
-void Renderer::Render(Snake const snake, SDL_Point const &food) {
+void Renderer::Render(Snake const snake, 
+                      SDL_Point const &food,
+                      const std::shared_ptr<Obstacles> obstacles) {
   SDL_Rect block;
   block.w = screen_width / grid_width;
   block.h = screen_height / grid_height;
@@ -52,6 +54,7 @@ void Renderer::Render(Snake const snake, SDL_Point const &food) {
   block.x = food.x * block.w;
   block.y = food.y * block.h;
   SDL_RenderFillRect(sdl_renderer, &block);
+
 
   // Render snake's body
   SDL_SetRenderDrawColor(sdl_renderer, 0xFF, 0xFF, 0xFF, 0xFF);
@@ -71,6 +74,7 @@ void Renderer::Render(Snake const snake, SDL_Point const &food) {
   }
   SDL_RenderFillRect(sdl_renderer, &block);
 
+  RenderObstacles(obstacles);
   // Update Screen
   SDL_RenderPresent(sdl_renderer);
 }
@@ -78,4 +82,22 @@ void Renderer::Render(Snake const snake, SDL_Point const &food) {
 void Renderer::UpdateWindowTitle(int score, int fps) {
   std::string title{"Snake Score: " + std::to_string(score) + " FPS: " + std::to_string(fps)};
   SDL_SetWindowTitle(sdl_window, title.c_str());
+}
+
+bool Renderer::RenderStartMenu() {
+  //std::vector<std::string> labels{'Start', 'Quit'};
+  return true;
+}
+
+void Renderer::RenderObstacles(const std::shared_ptr<Obstacles> obstacles) {
+  for(Obstacle &obstacle : obstacles->getObstacle()) {
+    SDL_Rect block;
+    SDL_SetRenderDrawColor(sdl_renderer, 0xFF, 0x00, 0x00, 0xFF);
+    block.w = screen_width / grid_width;
+    block.h = screen_height / grid_height;
+    block.x = obstacle.getX() * block.w;
+    block.y = obstacle.getY() * block.h;
+
+    SDL_RenderFillRect(sdl_renderer, &block);
+  }
 }

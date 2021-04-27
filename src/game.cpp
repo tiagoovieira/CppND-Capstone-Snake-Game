@@ -7,6 +7,8 @@ Game::Game(std::size_t grid_width, std::size_t grid_height)
       engine(dev()),
       random_w(0, static_cast<int>(grid_width - 1)),
       random_h(0, static_cast<int>(grid_height - 1)) {
+  _obstacles = std::shared_ptr<Obstacles>(new Obstacles());
+  PlaceObstacles();
   PlaceFood();
 }
 
@@ -17,15 +19,20 @@ void Game::Run(Controller const &controller, Renderer &renderer,
   Uint32 frame_end;
   Uint32 frame_duration;
   int frame_count = 0;
-  bool running = true;
+  bool running = false;
+  bool showMenu = true;
+
+  running = renderer.RenderStartMenu();
 
   while (running) {
+    // if snake dies, render main menu with the score
+    if(!snake.alive) return; 
     frame_start = SDL_GetTicks();
 
     // Input, Update, Render - the main game loop.
     controller.HandleInput(running, snake);
     Update();
-    renderer.Render(snake, food);
+    renderer.Render(snake, food, _obstacles);
 
     frame_end = SDL_GetTicks();
 
@@ -69,9 +76,13 @@ void Game::Update() {
   if (!snake.alive) return;
 
   snake.Update();
-
   int new_x = static_cast<int>(snake.head_x);
   int new_y = static_cast<int>(snake.head_y);
+  
+  if(_obstacles->ExistsAnObstacle(Obstacle(new_x, new_y))){
+    snake.alive = false;
+    return;
+  }
 
   // Check if there's food over here
   if (food.x == new_x && food.y == new_y) {
@@ -80,6 +91,22 @@ void Game::Update() {
     // Grow snake and increase speed.
     snake.GrowBody();
     snake.speed += 0.02;
+  }
+}
+
+void Game::PlaceObstacles() {
+  // Generate a random # of obstacles
+  int max = 20; 
+  srand(time(0));
+  int total = rand()%max;
+  int x, y;
+  for(int i = 0; i < 20; i++) {
+    x = random_w(engine);
+    y = random_h(engine);
+
+    if(!snake.SnakeCell(x,y) && !(food.x == x && food.y == y)) {
+      _obstacles->CreateObstacle(Obstacle(x, y));
+    }
   }
 }
 
